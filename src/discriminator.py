@@ -28,7 +28,7 @@ class Discriminator(nn.Module):
         # Conv2D
         self.layers.append(nn.Conv2d(in_channels=hdim[3][2],
                                              out_channels=hdim[3 + 1][2],
-                                             kernel_size=kernel_size, stride = 1, padding=1))
+                                             kernel_size=kernel_size, stride = 1))
 
         # Zeropad2
         self.layers.append(nn.ZeroPad2d(padding=(1,1,1,1)))
@@ -36,7 +36,7 @@ class Discriminator(nn.Module):
         #Conv2D 2
         self.layers.append(nn.Conv2d(in_channels=hdim[5][2],
                                              out_channels=hdim[5 + 1][2],
-                                             kernel_size=kernel_size, stride = 1, padding=1))
+                                             kernel_size=kernel_size, stride = 1))
 
         self.Leakyrelu = nn.LeakyReLU(0.2)
 
