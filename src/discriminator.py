@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torchsummary import summary
+
 class Discriminator(nn.Module):
     def __init__(self, latent_dims, s_img, hdim, kernel_size=(4, 4), stride=2):
         super(Discriminator, self).__init__()
@@ -45,13 +46,15 @@ class Discriminator(nn.Module):
         for layer in self.layers:
             x = self.Leakyrelu(layer(x))
         return x
+    
+    
 def Discriminator_test():
     #test auo-encoder
     n_samples, in_channels, s_img, latent_dims = 1, 6, 256, 512 # 6 for two images
     hdim = [[128, 128,64], [64,64,128], [32,32,256],[34,34,256],[31,31,512],[33,33,512],[30,30,1]] #choose hidden dimension encoder
 
     #generate random sample
-    x = torch.randn((in_channels, s_img, s_img))
+    x = torch.randn((n_samples, in_channels, s_img, s_img))
     print(x.shape)
 
     #initialize model
@@ -59,7 +62,6 @@ def Discriminator_test():
     x_hat = model.forward(x)
 
     #compare input and output shape
-    print('Output check:', x_hat.shape == x.shape)
     print('shape xhat', x_hat.shape)
 
     #summary of auto-encoder
