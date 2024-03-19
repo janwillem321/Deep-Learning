@@ -82,8 +82,8 @@ if __name__ == "__main__":
     #Create instance of Autoencoder
     device = try_gpu()
 
-    AE2 = Generator(latent_dims[0], s_img, hdim = hdim).to(device) #2-dimensional latent space
-    AE3 = Generator(latent_dims[1], s_img, hdim = hdim).to(device) #3-dimensional latent space
+    # AE2 = Disc(latent_dims[0], s_img, hdim = hdim).to(device) #2-dimensional latent space
+    # AE3 = Generator(latent_dims[1], s_img, hdim = hdim).to(device) #3-dimensional latent space
 
     # Create loss function and optimizer
     criterion = F.mse_loss
