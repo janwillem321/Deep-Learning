@@ -14,29 +14,29 @@ class Discriminator(nn.Module):
 
         self.layers = nn.ModuleList()
         # Input layer dim -- down1
-        self.layers.append(nn.Conv2d(in_channels=6, out_channels=64, kernel_size=kernel_size, stride=stride))
+        self.layers.append(nn.Conv2d(in_channels=6, out_channels=64, kernel_size=kernel_size, stride=2, padding=1))
 
         # Hidden to hidden convolution -- down2 and down 3
         for i in range(0, 2):
             self.layers.append(nn.Conv2d(in_channels=hdim[i][2],
                                              out_channels=hdim[i + 1][2],
-                                             kernel_size=kernel_size, stride = stride))
+                                             kernel_size=kernel_size, stride = stride, padding=1))
 
         # Pad with zeroes
         self.layers.append(nn.ZeroPad2d(padding=(1,1,1,1)))
 
         # Conv2D
-        # self.layers.append(nn.Conv2d(hdim[3][0] * hdim[3][1] * hdim[3][2],
-        #                                      hdim[3 + 1][0] * hdim[3 + 1][1] * hdim[3 + 1][2],
-        #                                      kernel_size, stride=1))
+        self.layers.append(nn.Conv2d(in_channels=hdim[3][2],
+                                             out_channels=hdim[3 + 1][2],
+                                             kernel_size=kernel_size, stride = 1, padding=1))
 
-        # # Zeropad2
-        # self.layers.append(padding=(1,1,1,1))
-        #
-        # #Conv2D 2
-        # self.layers.append(nn.Conv2d(hdim[5][0] * hdim[5][1] * hdim[5][2],
-        #                                      hdim[5 + 1][0] * hdim[5 + 1][1] * hdim[5 + 1][2],
-        #                                      kernel_size, stride=1))
+        # Zeropad2
+        self.layers.append(nn.ZeroPad2d(padding=(1,1,1,1)))
+
+        #Conv2D 2
+        self.layers.append(nn.Conv2d(in_channels=hdim[5][2],
+                                             out_channels=hdim[5 + 1][2],
+                                             kernel_size=kernel_size, stride = 1, padding=1))
 
         self.Leakyrelu = nn.LeakyReLU(0.2)
 
