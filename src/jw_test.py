@@ -5,6 +5,7 @@ from torchvision.transforms import transforms
 import numpy as np
 from torchvision import datasets
 from gen import Encoder
+from gen import Decoder
 
 
 def main():
@@ -23,13 +24,15 @@ def generator_test():
 
     # initialize model
     model = Encoder()
+    model2 = Decoder()
     x_hat = model.forward(x)
+    x_hat2 = model2.forward(x_hat)
 
-    print('shape xhat', x_hat.shape)
+    print('shape output encoder', x_hat.shape, 'output decoder', x_hat2.shape)
 
     # summary of auto-encoder
     summary(model, (3 ,in_channels, s_img, s_img), device='cpu')  # (in_channels, height, width)
-
+    summary(model2, (3, 512, 1, 1), device='cpu')
 
 if __name__ == "__main__":
     main()

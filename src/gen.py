@@ -56,3 +56,48 @@ class Encoder(nn.Module):
 
         return x
 
+class Decoder(nn.Module):
+    def __init__(self):
+        super(Decoder, self).__init__()
+        dim_in = [512, 512 , 512, 512, 512, 256, 128, 64, 3]
+
+        self.layers = nn.ModuleList()
+
+        # layers 1 to 3 with dropout
+        for in_out in Range(0, 3):
+            self.layers.append(
+                nn.ConvTranspose2d(
+                    in_channels=dim_in[in_out],
+                    out_channels=dim_in[(in_out + 1)],
+                    kernel_size=(4, 4),
+                    stride=2,
+                    padding=1,
+                )
+            )
+
+            self.layers.append(nn.BatchNorm2d(dim_in[in_out + 1]))
+            self.layers.append(nn.Dropout2d(0.5))
+            self.layers.append(nn.LeakyReLU(0.2))
+
+        # the rest of the layers without dropout
+        for in_out in Range(3, (len(dim_in) - 1)):
+            self.layers.append(
+                nn.ConvTranspose2d(
+                    in_channels=dim_in[in_out],
+                    out_channels=dim_in[(in_out + 1)],
+                    kernel_size=(4, 4),
+                    stride=2,
+                    padding=1,
+                )
+            )
+
+            self.layers.append(nn.BatchNorm2d(dim_in[in_out + 1]))
+            self.layers.append(nn.LeakyReLU(0.2))
+
+        #map back to an image with tangent or something
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+
+        return x
