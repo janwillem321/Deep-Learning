@@ -8,10 +8,10 @@ from torchsummary import summary
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
-
-        self.layers = []
-
+        #test
         dim_in = [3, 64, 128, 256, 512, 512, 512, 512, 512]
+
+        self.layers = nn.ModuleList()
 
         # layer 1
         self.layers.append(
@@ -20,7 +20,7 @@ class Encoder(nn.Module):
                 out_channels=dim_in[1],
                 kernel_size=(4, 4),
                 stride=2,
-                padding=2,
+                padding=1,
             )
         )
 
@@ -34,7 +34,7 @@ class Encoder(nn.Module):
                     out_channels=dim_in[(in_out + 1)],
                     kernel_size=(4, 4),
                     stride=2,
-                    padding=2,
+                    padding=1,
                 )
             )
 
@@ -52,6 +52,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         for layer in self.layers:
-            x = layer.forward(x)
+            x = layer(x)
 
         return x
+
