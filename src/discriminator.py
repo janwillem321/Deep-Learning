@@ -1,9 +1,17 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torchvision
 from torchsummary import summary
 import torch.optim as optim
 import matplotlib.pyplot as plt
+
+import torchvision.transforms as transforms
+from torchvision.datasets import ImageFolder, DatasetFolder
+from torch.utils.data import DataLoader
+import os
+from PIL import Image
+
 
 # =============================================================================
 # Define the Discriminator
@@ -66,7 +74,6 @@ class Discriminator(nn.Module):
 def generate_fake_image():
     return torch.randn(in_channels//2, s_img, s_img)
     
-    
 
 # =============================================================================
 # test auo-encoder
@@ -82,21 +89,42 @@ labels = torch.empty(output_shape)
 # =============================================================================
 # Fill x with stacks of fake images (random) and real images (all ones)
 # =============================================================================
-real_image = torch.ones(in_channels//2, s_img, s_img)
+# real_image = torch.ones(in_channels//2, s_img, s_img)
 
-for i in range(n_samples):
-    fake_image = generate_fake_image()
-    
+transform = transforms.Compose([
+    transforms.Resize((256, 256)),  # Resize the images to a consistent size
+    transforms.ToTensor()           # Convert the images to PyTorch tensors
+    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the images
+])
+
+
+# get the path or directory
+folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
+folder_dir_in = "Deep-Learning/train_folder/input_images"
+# get the path or directory
+# folder_dir_gt = "/Users/rexfleur/PycharmProjects/pix_gan/Deep-Learning/train_folder/ground_truth"
+# folder_dir_in = "/Users/rexfleur/PycharmProjects/pix_gan/Deep-Learning/train_folder/input_images"
+
+in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
+gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
+
+print(gt_list)
+
+for i in range(10):
+    gt_img = transform(Image.open(gt_list.pop()))
+    input_img = transform(Image.open(in_list.pop()))
+
     if i % 2 == 0:  # Even indices for real images
-        x[i, :, :, :] = torch.cat((fake_image, real_image), dim=0)
-        print(torch.cat((fake_image, real_image), dim=0).shape)
+        x[i, :, :, :] = torch.cat((input_img, gt_img), dim=0)
+        print(torch.cat((input_img, gt_img), dim=0).shape)
         labels[i, 0] = torch.ones(30, 30)
-        
+
     else:  # Odd indices for fake images
-        fake_image_2 = generate_fake_image()
-        x[i, :, :, :] = torch.cat((fake_image, fake_image_2), dim=0)
+        x[i, :, :, :] = torch.cat((input_img, input_img), dim=0)
         labels[i, 0] = torch.zeros(30, 30)
-        
+
+    i+=1
+
 # =============================================================================
 # initialize model
 # =============================================================================
