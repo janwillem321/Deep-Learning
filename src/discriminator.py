@@ -97,13 +97,8 @@ transform = transforms.Compose([
     #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the images
 ])
 
-
-# get the path or directory
 folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
 folder_dir_in = "Deep-Learning/train_folder/input_images"
-# get the path or directory
-# folder_dir_gt = "/Users/rexfleur/PycharmProjects/pix_gan/Deep-Learning/train_folder/ground_truth"
-# folder_dir_in = "/Users/rexfleur/PycharmProjects/pix_gan/Deep-Learning/train_folder/input_images"
 
 in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
 gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
