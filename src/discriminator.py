@@ -161,3 +161,22 @@ plt.ylim(0, .8)
 plt.xlabel('epochs')
 plt.ylabel('Loss (BCE)')
 plt.show()
+
+
+#Test
+
+test_loss = 0.0
+correct, total = 0,0
+
+for data,label in testloader:
+    if is_gpu:
+        data, label = data.cuda(), label.cuda()
+    output = model(data)
+    for o,l in zip(torch.argmax(output,axis = 1),label):
+        if o == l:
+            correct += 1
+        total += 1
+    loss = criterion(output,label)
+    test_loss += loss.item() * data.size(0)
+print(f'Testing Loss:{test_loss/len(testloader)}')
+print(f'Correct Predictions: {correct}/{total}')
