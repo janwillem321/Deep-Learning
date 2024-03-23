@@ -19,9 +19,9 @@ def train(train_loader, net, optimizer, criterion, device = 'cpu'):
     for i, data in enumerate(train_loader):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
-
+        
         # convert the inputs to run on GPU if set
-        inputs = inputs.to(device)
+        inputs, labels = inputs.to(device), labels.to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()

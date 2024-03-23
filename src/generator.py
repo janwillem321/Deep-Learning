@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchinfo import summary
 
 class Encoder(nn.Module):
-    def __init__(self, latent_dims, s_img, hdim, kernel_size = (4,4), stride =2, padding = 1):
+    def __init__(self, latent_dims, s_img, hdim, kernel_size = (4,4), stride =2, padding = 0):
         super(Encoder, self).__init__()
 
         self.layers = nn.ModuleList()
@@ -43,7 +43,7 @@ class Encoder(nn.Module):
         SkipConnections = []
 
         for layer in self.layers:
-            print(layer)
+            # print(layer)
             x = layer.forward(x)
             SkipConnections.append(x)
 
@@ -51,7 +51,7 @@ class Encoder(nn.Module):
 
 #decoder
 class Decoder(nn.Module):
-    def __init__(self, latent_dims, s_img, hdim_in, hdim_out, kernel_size = (4,4), stride =2, padding= 1):
+    def __init__(self, latent_dims, s_img, hdim_in, hdim_out, kernel_size = (4,4), stride =2, padding= 0):
         super(Decoder, self).__init__()
 
         self.layers = nn.ModuleList()
@@ -89,87 +89,87 @@ class Decoder(nn.Module):
             self.layers.append(nn.LeakyReLU(0.2))
             
     def forward(self, z, SkipConnections):
-
+        
+        EncoderIndex = 3/4
         SkipConnections.reverse()
-        # # First layer conv, batchnorm, dropout, lrelu
-        # z = self.layers[0].forward(z) 
-        # z = self.layers[1].forward(z)
-        # z = self.layers[2].forward(z)
-        # z = self.layers[3].forward(z)
-        # # second layer with skip connection
-        # z = self.layers[4].forward(torch.cat((z,SkipConnections[1]), 1)) 
-        # z = self.layers[5].forward(z)
-        # z = self.layers[6].forward(z)
-        # z = self.layers[7].forward(z)
-        # z = self.layers[8].forward(torch.cat((z,SkipConnections[1]), 1)) 
-        # z = self.layers[1].forward(z)
-        # z = self.layers[2].forward(z)
-        # z = self.layers[3].forward(z)
-        # z = self.layers[4].forward(torch.cat((z,SkipConnections[1]), 1)) 
-        # z = self.layers[1].forward(z)
-        # z = self.layers[2].forward(z)
-        # z = self.layers[3].forward(z)
+        # for con in SkipConnections:
+        #     print(con.shape)
+        
+        # for lay in self.layers:
+        #     print(lay)
 
         for i, layer in enumerate(self.layers):
             if i % 4 == 0 and i != 0:
-                print(i)
-                print(f'layers shape{layer.parameters}')
-                print(f' z shape = {z.shape}')
-                print(f' x shape = {SkipConnections[i-1].shape}')
-                print(f'z concat x = {torch.cat((z,SkipConnections[i-1]), 1).shape}')
-                z = layer.forward(torch.cat((z,SkipConnections[i-4]), 1)) 
+                j = int(EncoderIndex * i) 
+                # print("index i= ", i)
+                # print("index j = ",j)
+                # print(f'layers shape{layer.parameters}')
+                # print(f' z shape = {z.shape}')
+                # print(f' x shape = {SkipConnections[j].shape}')
+                # print(f'z concat x = {torch.cat((z,SkipConnections[j]), 1).shape}')
+                z = layer.forward(torch.cat((z,SkipConnections[j]), 1)) 
             else:
-                print(i)
-                print(f' z shape = {z.shape}')
-                print(f' x shape = {SkipConnections[i-1].shape}')
+                # print(i)
+                # print(f' z shape = {z.shape}')
+                # print(f' x shape = {SkipConnections[EncoderIndex * i].shape}')
                 z = layer.forward(z)
         
-        
-        # for i, layer in enumerate(self.layers):
-        #     if i == 0 or i > 7:
-        #         print(i)
-        #         print(f' z shape = {z.shape}')
-        #         print(f' x shape = {SkipConnections[i-1].shape}')
-        #         z = layer.forward(z)
-        #     else:
-        #         print(i)
-        #         print(f'layers shape{layer.parameters}')
-        #         print(f' z shape = {z.shape}')
-        #         print(f' x shape = {SkipConnections[i-1].shape}')
-        #         print(f'z concat x = {torch.cat((z,SkipConnections[i-1]), 1).shape}')
-        #         z = layer.forward(torch.cat((z,SkipConnections[i-1]), 1))  
-
         return z
 
 #Generator
 class Generator(nn.Module):
-    def __init__(self, latent_dims, s_img, hdim_e, hdim_d_input,hdim_d_output, padding):
+    def __init__(self,
+                latent_dims,
+                s_img,
+                hdim_e,
+                hdim_d_input,
+                hdim_d_output,
+                kernel_size, 
+                padding):
         super(Generator, self).__init__()
 
-        self.encoder = Encoder(latent_dims, s_img, hdim_e, padding)
-        self.decoder = Decoder(latent_dims, s_img, hdim_d_input, hdim_d_output, padding)
+        self.encoder = Encoder(
+            latent_dims=latent_dims,
+            s_img=s_img,hdim=hdim_e,
+            kernel_size= kernel_size,
+            padding= padding)
+        self.decoder = Decoder(
+            latent_dims=latent_dims,
+            s_img=s_img, 
+            hdim_in=hdim_d_input, 
+            hdim_out=hdim_d_output,
+            kernel_size=kernel_size, 
+            padding=padding)
 
     def forward(self, x):
 
         z, skipConnections = self.encoder(x)
-        print(f"the shape of encoder is {z.shape}")
+        # print(f"the shape of encoder is {z.shape}")
         y = self.decoder(z, skipConnections)
 
         return y
-    
+
+
 def generator_test():
     #test auo-encoder
     n_samples, in_channels, s_img, latent_dims, padding = 3, 3, 256, 512,1
     hdim_e = [3, 64, 128, 256, 512, 512, 512, 512, 512] #choose hidden dimension encoder
     hdim_d_input = [512, 1024, 1024, 1024, 1024, 512, 256, 128, 3] #choose hidden dimension decoder
     hdim_d_output = [512, 512, 512, 512, 512, 256, 128, 64, 3]
+    kernel_size = (4,4)
 
     #generate random sample
     x = torch.randn((n_samples, in_channels, s_img, s_img))
     print(x.shape)
 
     #initialize model
-    model = Generator(latent_dims, s_img, hdim_e, hdim_d_input,hdim_d_output, padding)
+    model = Generator(latent_dims=latent_dims,
+                        s_img=s_img,
+                        hdim_e=hdim_e, 
+                        hdim_d_input=hdim_d_input,
+                        hdim_d_output=hdim_d_output, 
+                        padding=padding,
+                        kernel_size=kernel_size)
     x_hat = model(x)
 
     #compare input and output shape
@@ -180,6 +180,6 @@ def generator_test():
     summary(model, (3 ,in_channels, s_img, s_img), device='cpu', depth=5,)  # (in_channels, height, width)
 
 
-generator_test()
+# generator_test()
     
 

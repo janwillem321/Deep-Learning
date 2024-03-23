@@ -1,3 +1,4 @@
+import torch
 from generator import Generator
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -52,7 +53,7 @@ def show_images():
     plt.show()
 
 if __name__ == "__main__":
-    show_images()
+    # show_images()
 
         # Define your transformations
     transform = transforms.Compose([
@@ -72,48 +73,65 @@ if __name__ == "__main__":
     images_a, images_b = next(iter(EUVP_data))
 
     #Set the number of dimensions of the latent space
-    latent_dims = [2,3]
-    s_img = np.size(images_a[1][0], axis = 2) #get image size (height = width) from a data sample
-    hdim = [100, 50]
+    # latent_dims = [2,3]
+    s_img = np.size(images_a[1][0], axis = 1) #get image size (height = width) from a data sample
+    # hdim = [100, 50]
+
+    n_samples, in_channels, s_img, latent_dims, padding = 3, 3, 256, 512,1
+    hdim_e = [3, 64, 128, 256, 512, 512, 512, 512, 512] #choose hidden dimension encoder
+    hdim_d_input = [512, 1024, 1024, 1024, 1024, 512, 256, 128, 3] #choose hidden dimension decoder
+    hdim_d_output = [512, 512, 512, 512, 512, 256, 128, 64, 3]
+    kernel_size = (4,4)
+
+    #initialize model
+    model = Generator(latent_dims=latent_dims,
+                        s_img=s_img,
+                        hdim_e=hdim_e, 
+                        hdim_d_input=hdim_d_input,
+                        hdim_d_output=hdim_d_output, 
+                        padding=padding,
+                        kernel_size=kernel_size)
 
     # Create a writer to write to Tensorboard
     writer = SummaryWriter()
 
     #Create instance of Autoencoder
     device = try_gpu()
-
-    AE2 = Generator(latent_dims[0], s_img, hdim = hdim).to(device) #2-dimensional latent space
-    AE3 = Generator(latent_dims[1], s_img, hdim = hdim).to(device) #3-dimensional latent space
+    print(device)
+    if torch.cuda.is_available():
+        model.cuda()
+    # AE2 = Generator(latent_dims[0], s_img, hdim = hdim).to(device) #2-dimensional latent space
+    # AE3 = Generator(latent_dims[1], s_img, hdim = hdim).to(device) #3-dimensional latent space
 
     # Create loss function and optimizer
     criterion = F.mse_loss
 
-    optimizer = optim.Adam(AE2.parameters(), lr=5e-4)
+    optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
     # Set the number of epochs to for training
     epochs = 20
 
     for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
         # Train on data
-        train_loss = train(EUVP_data, AE2, optimizer, criterion, device)
+        train_loss = train(EUVP_data, model, optimizer, criterion, device)
 
         # Write metrics to Tensorboard
         writer.add_scalars("Loss", {'Train': train_loss}, epoch)
 
-    # Create a writer to write to Tensorboard
-    writer = SummaryWriter()
+    # # Create a writer to write to Tensorboard
+    # writer = SummaryWriter()
 
-    optimizer = optim.Adam(AE3.parameters(), lr=5e-4)
+    # optimizer = optim.Adam(AE3.parameters(), lr=5e-4)
 
-    # Set the number of epochs to for training
-    epochs = 20
+    # # Set the number of epochs to for training
+    # epochs = 20
 
-    for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
-        # Train on data
-        train_loss = train(EUVP_data, AE3, optimizer, criterion, device)
+    # for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
+    #     # Train on data
+    #     train_loss = train(EUVP_data, AE3, optimizer, criterion, device)
 
-        # Write metrics to Tensorboard
-        writer.add_scalars("Loss", {'Train': train_loss}, epoch)
+    #     # Write metrics to Tensorboard
+    #     writer.add_scalars("Loss", {'Train': train_loss}, epoch)
 
 
 
