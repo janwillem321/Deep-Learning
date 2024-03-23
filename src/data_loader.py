@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
+
 class PairedImageDataset(Dataset):
     def __init__(self, rootA, rootB, transform=None):
         """
@@ -25,7 +26,7 @@ class PairedImageDataset(Dataset):
     def __getitem__(self, idx):
         img_nameA = os.path.join(self.rootA, self.filenames[idx])
         imageA = Image.open(img_nameA).convert('RGB')
-        
+
         img_nameB = os.path.join(self.rootB, self.filenames[idx])
         imageB = Image.open(img_nameB).convert('RGB')
 
@@ -34,4 +35,14 @@ class PairedImageDataset(Dataset):
             imageB = self.transform(imageB)
 
         return imageA, imageB
-    
+
+def try_gpu():
+    """
+    If GPU is available, return torch.device as cuda:0; else return torch.device
+    as cpu.
+    """
+    if torch.cuda.is_available():
+        device = torch.device('cuda:0')
+    else:
+        device = torch.device('cpu')
+    return device
