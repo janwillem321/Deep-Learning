@@ -1,15 +1,17 @@
-
+import PIL.Image
 from PIL import Image
 from torch.utils.data import Dataset
 import torch.nn as nn
 import torch
 from torchinfo import summary
+from torchvision.utils import save_image
+from tqdm import tqdm
 
 from gen import Generator, train
-from torch.utils.data import  DataLoader
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
+import numpy as np
 import torch.nn.functional as F
 import torch.optim as optim
 
@@ -17,7 +19,7 @@ import os
 
 from src.data_loader import PairedImageDataset, try_gpu
 
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class PairedImageDataset(Dataset):
@@ -51,6 +53,7 @@ class PairedImageDataset(Dataset):
 
         return imageA, imageB
 
+
 def try_gpu():
     """
     If GPU is available, return torch.device as cuda:0; else return torch.device
@@ -61,8 +64,6 @@ def try_gpu():
     else:
         device = torch.device('cpu')
     return device
-
-
 
 
 class Generator(nn.Module):
@@ -142,7 +143,7 @@ class Generator(nn.Module):
             )
 
             self.layers.append(nn.BatchNorm2d(dim_in_decoder[in_out + 1]))
-            self.layers.append(nn.Dropout2d(0.5)) #todo()
+            self.layers.append(nn.Dropout2d(0.5))  # todo()
             self.layers.append(nn.LeakyReLU(0.2))
 
         print("layer", len(self.layers))
@@ -150,27 +151,30 @@ class Generator(nn.Module):
     def forward(self, x):
         encoder_out = []
 
-        #forward on first layer
+        # forward on first layer
         x = self.forward_2_lay(x, 0)
         encoder_out.append(x)
         # print("first pass", x.shape)
 
-        #forward encoder and save layers
-        for i in range(0, 6): # 1 - 8
+        # forward encoder and save layers
+        for i in range(0, 6):  # 1 - 8
             x = self.forward_3_lay(x, i, 2)
             encoder_out.append(x)
             # print("second loop", x.shape)
 
-        #Do layer 512x1x1
+        # Do layer 512x1x1
         x = self.forward_3_lay(x, 6, 2)
-        #Do layer 512x2x2
+        # Do layer 512x2x2
         x = self.forward_4_lay(x, 0, 26)
 
-        #Do forward on decoder
+        # Do forward on decoder
         for i in range(0, 7):
             # print("encoder", encoder_out[6 - i].shape,"x", x.shape)
             x = self.forward_4_lay(torch.add(x, encoder_out[6 - i]), i, 30)
             # print("decoder for loop", x.shape)
+
+        x = torch.tanh(x)
+        x = x * 255
 
         return x
 
@@ -197,7 +201,6 @@ class Generator(nn.Module):
         return x
 
 
-
 def train(train_loader, net, optimizer, criterion, device='cpu'):
     """
     Trains network for one epoch in batches.
@@ -215,10 +218,10 @@ def train(train_loader, net, optimizer, criterion, device='cpu'):
     # iterate through batches
     for i, data in enumerate(train_loader):
         # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data
+        inputs, good_images = data
 
         # convert the inputs to run on GPU if set
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, good_images = inputs.to(device), good_images.to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -226,7 +229,7 @@ def train(train_loader, net, optimizer, criterion, device='cpu'):
         # forward + backward + optimize
         outputs = net(inputs)
 
-        loss = criterion(outputs, inputs)
+        loss = criterion(outputs, good_images) # compare output with labels
         loss.backward()
         optimizer.step()
 
@@ -235,9 +238,9 @@ def train(train_loader, net, optimizer, criterion, device='cpu'):
 
     return avg_loss / len(train_loader)
 
-def main():
-    # show_images()
 
+
+def main():
     # Define your transformations
     transform = transforms.Compose([
         transforms.Resize((256, 256)),
@@ -245,15 +248,12 @@ def main():
     ])
 
     # Initialize the dataset
-    paired_dataset = PairedImageDataset(rootA=r'../EUVP/Paired/underwater_dark/trainB',
+    paired_dataset = PairedImageDataset(rootA=r'../EUVP/Paired/underwater_dark/trainA',
                                         rootB=r'../EUVP/Paired/underwater_dark/trainB',
                                         transform=transform)
 
     # Initialize DataLoader
-    EUVP_data = DataLoader(paired_dataset, batch_size=10, shuffle=False, num_workers=4)
-
-    # Fetch a single batch
-    images_a, images_b = next(iter(EUVP_data))
+    EUVP_data = DataLoader(paired_dataset, batch_size=180, shuffle=False, num_workers=16)
 
     # initialize model
     model = Generator()
@@ -275,9 +275,8 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
     # Set the number of epochs to for training
-    epochs = 20
+    epochs = 0
 
-    print("Start training procedur")
     for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
         # Train on data
         train_loss = train(EUVP_data, model, optimizer, criterion, device)
@@ -285,20 +284,38 @@ def main():
         # Write metrics to Tensorboard
         writer.add_scalars("Loss", {'Train': train_loss}, epoch)
 
-    # # Create a writer to write to Tensorboard
-    # writer = SummaryWriter()
+    # make a folder
+    count = 0
+    image_counter = 10
+    path = 'res_test'
+    path_loop = None
+    # Initialize DataLoader
+    EUVP_data = DataLoader(paired_dataset, batch_size=5, shuffle=False, num_workers=16)
 
-    # optimizer = optim.Adam(AE3.parameters(), lr=5e-4)
+    print("start printing")
+    # Store somep images
+    for i, data in enumerate(EUVP_data):
+        inputs, labels = data
+        inputs, labels = inputs.to(device), labels.to(device)
+        y_out = model.forward(inputs)
 
-    # # Set the number of epochs to for training
-    # epochs = 20
+        for x in range(len(inputs) - 1):
+            path_loop = f"{path}/test{count}"
+            if not (os.path.exists(path_loop) and os.path.isdir(path_loop)):
+                os.makedirs(path_loop)
 
-    # for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
-    #     # Train on data
-    #     train_loss = train(EUVP_data, AE3, optimizer, criterion, device)
+            name = (f'{path_loop}/image_in{count}.jpg')
+            save_image(inputs[x], name)
+            name = (f'{path_loop}/image_out{count}.jpg')
+            save_image(y_out[x], name)
+            name = (f'{path_loop}/image_truth{count}.jpg')
+            save_image(labels[x], name)
+            count += 1
 
-    #     # Write metrics to Tensorboard
-    #     writer.add_scalars("Loss", {'Train': train_loss}, epoch)
+            if (count == image_counter):
+                break
+        break
+
 
 def generator_test():
     # test auo-encoder
@@ -315,7 +332,46 @@ def generator_test():
     print('shape output encoder', x_hat.shape)
 
     # summary of auto-encoder
-    summary(model, (3 ,in_channels, s_img, s_img), device='cpu')  # (in_channels, height, width)
+    summary(model, (3, in_channels, s_img, s_img), device='cpu')  # (in_channels, height, width)
+
 
 if __name__ == "__main__":
     main()
+
+
+def train(train_loader, net, optimizer, criterion, device='cpu'):
+    """
+    Trains network for one epoch in batches.
+
+    Args:
+        train_loader: Data loader for training set.
+        net: Neural network model.
+        optimizer: Optimizer (e.g. SGD).
+        criterion: Loss function (e.g. cross-entropy loss).
+        device: whether the network runs on cpu or gpu
+    """
+
+    avg_loss = 0
+
+    # iterate through batches
+    for i, data in enumerate(train_loader):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, good_images = data
+
+        # convert the inputs to run on GPU if set
+        inputs, good_images = inputs.to(device), good_images.to(device)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+
+        loss = criterion(outputs, good_images)  # compare output with labels
+        loss.backward()
+        optimizer.step()
+
+        # keep track of loss and accuracy
+        avg_loss += loss
+
+    return avg_loss / len(train_loader)
