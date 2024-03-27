@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -73,12 +75,19 @@ class Discriminator(nn.Module):
 
 def generate_fake_image():
     return torch.randn(in_channels//2, s_img, s_img)
-    
+
+
+folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
+folder_dir_in = "Deep-Learning/train_folder/input_images"
+
+in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
+gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
+enhanced_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
 
 # =============================================================================
 # test auo-encoder
 # =============================================================================
-n_samples, in_channels, s_img, latent_dims = 10, 6, 256, 512 # 6 for two images
+n_samples, in_channels, s_img, latent_dims = len(in_list) * 2, 6, 256, 512 # 6 for two images
 hdim = [64, 128, 256, 256, 512, 512, 1] #choose hidden dimension discriminator
 output_shape = (n_samples, 1, 30, 30)
 
@@ -97,28 +106,41 @@ transform = transforms.Compose([
     #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the images
 ])
 
-folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
-folder_dir_in = "Deep-Learning/train_folder/input_images"
+training_list = []
 
-in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
-gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
+# create training list with right size (transformed)
+for i in range(len(in_list)):
+    print(in_list[i])
+    training_list.append((transform(Image.open(in_list[i])), transform(Image.open(enhanced_list[i])), 0))
+    training_list.append((transform(Image.open(in_list[i])), transform(Image.open(gt_list[i])), 1))
 
-print(gt_list)
+random.shuffle(training_list)
 
-for i in range(10):
-    gt_img = transform(Image.open(gt_list.pop()))
-    input_img = transform(Image.open(in_list.pop()))
+# print(gt_list)
 
-    if i % 2 == 0:  # Even indices for real images
-        x[i, :, :, :] = torch.cat((input_img, gt_img), dim=0)
-        print(torch.cat((input_img, gt_img), dim=0).shape)
+for i, tuple in enumerate(training_list):
+    img1, img2, label = tuple
+    x[i, :, :, :] = torch.cat((img1, img2), dim=0)
+    if label == 1:
         labels[i, 0] = torch.ones(30, 30)
-
-    else:  # Odd indices for fake images
-        x[i, :, :, :] = torch.cat((input_img, input_img), dim=0)
+    else:
         labels[i, 0] = torch.zeros(30, 30)
 
-    i+=1
+
+
+    # gt_img = transform(Image.open(gt_list.pop()))
+    # input_img = transform(Image.open(in_list.pop()))
+    #
+    # if i % 2 == 0:  # Even indices for real images
+    #     x[i, :, :, :] = torch.cat((input_img, gt_img), dim=0)
+    #     print(torch.cat((input_img, gt_img), dim=0).shape)
+    #     labels[i, 0] = torch.ones(30, 30)
+    #
+    # else:  # Odd indices for fake images
+    #     x[i, :, :, :] = torch.cat((input_img, input_img), dim=0)
+    #     labels[i, 0] = torch.zeros(30, 30)
+    #
+    # i+=1
 
 # =============================================================================
 # initialize model
@@ -164,19 +186,19 @@ plt.show()
 
 
 #Test
-
-test_loss = 0.0
-correct, total = 0,0
-
-for data,label in testloader:
-    if is_gpu:
-        data, label = data.cuda(), label.cuda()
-    output = model(data)
-    for o,l in zip(torch.argmax(output,axis = 1),label):
-        if o == l:
-            correct += 1
-        total += 1
-    loss = criterion(output,label)
-    test_loss += loss.item() * data.size(0)
-print(f'Testing Loss:{test_loss/len(testloader)}')
-print(f'Correct Predictions: {correct}/{total}')
+#
+# test_loss = 0.0
+# correct, total = 0,0
+#
+# for data,label in testloader:
+#     if is_gpu:
+#         data, label = data.cuda(), label.cuda()
+#     output = model(data)
+#     for o,l in zip(torch.argmax(output,axis = 1),label):
+#         if o == l:
+#             correct += 1
+#         total += 1
+#     loss = criterion(output,label)
+#     test_loss += loss.item() * data.size(0)
+# print(f'Testing Loss:{test_loss/len(testloader)}')
+# print(f'Correct Predictions: {correct}/{total}')
