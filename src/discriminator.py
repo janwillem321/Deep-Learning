@@ -14,8 +14,9 @@ from torch.utils.data import DataLoader
 import os
 from PIL import Image
 
-folder_dir_in_matthijs = r'C:\Users\matth\Documents\Master Nanobiology\Deep learning\github\train_folder\Input_images'
-folder_dir_gt_matthijs = r'C:\Users\matth\Documents\Master Nanobiology\Deep learning\github\train_folder\ground_truth'
+folder_dir_in_matthijs = r'C:\Users\matth\Documents\Master Nanobiology\Deep learning\project\Images input'
+folder_dir_gt_matthijs = r"C:\Users\matth\Documents\Master Nanobiology\Deep learning\project\Images GT"
+folder_dir_en_matthijs = r"C:\Users\matth\Documents\Master Nanobiology\Deep learning\project\Images G"
 
 
 # =============================================================================
@@ -76,16 +77,13 @@ class Discriminator(nn.Module):
         return x
 
 
-# def generate_fake_image():
-#     return torch.randn(in_channels//2, s_img, s_img)
-
-
 def train_discriminator():
 
-    folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
-    folder_dir_in = "Deep-Learning/train_folder/input_images"
+    folder_dir_gt = folder_dir_gt_matthijs
+    folder_dir_in = folder_dir_in_matthijs
+    folder_dir_en = folder_dir_en_matthijs
 
-    in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
+    in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_en)]
     gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
     enhanced_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
 
@@ -182,6 +180,8 @@ def train_discriminator():
     plt.xlabel('epochs')
     plt.ylabel('Loss (BCE)')
     plt.show()
+    
+train_discriminator()
 
 
 # =============================================================================
