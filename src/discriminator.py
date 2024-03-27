@@ -14,6 +14,9 @@ from torch.utils.data import DataLoader
 import os
 from PIL import Image
 
+folder_dir_in_matthijs = r'C:\Users\matth\Documents\Master Nanobiology\Deep learning\github\train_folder\Input_images'
+folder_dir_gt_matthijs = r'C:\Users\matth\Documents\Master Nanobiology\Deep learning\github\train_folder\ground_truth'
+
 
 # =============================================================================
 # Define the Discriminator
@@ -80,9 +83,9 @@ def generate_fake_image():
 folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
 folder_dir_in = "Deep-Learning/train_folder/input_images"
 
-in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
-gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
-enhanced_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
+in_list = [os.path.join(folder_dir_in_matthijs, filename) for filename in os.listdir(folder_dir_in_matthijs)]
+gt_list = [os.path.join(folder_dir_gt_matthijs, filename) for filename in os.listdir(folder_dir_gt_matthijs)]
+enhanced_list = [os.path.join(folder_dir_in_matthijs, filename) for filename in os.listdir(folder_dir_in_matthijs)]
 
 # =============================================================================
 # test auo-encoder
@@ -90,10 +93,6 @@ enhanced_list = [os.path.join(folder_dir_in, filename) for filename in os.listdi
 n_samples, in_channels, s_img, latent_dims = len(in_list) * 2, 6, 256, 512 # 6 for two images
 hdim = [64, 128, 256, 256, 512, 512, 1] #choose hidden dimension discriminator
 output_shape = (n_samples, 1, 30, 30)
-
-
-x = torch.empty((n_samples, in_channels, s_img, s_img))
-labels = torch.empty(output_shape)
 
 # =============================================================================
 # Fill x with stacks of fake images (random) and real images (all ones)
@@ -110,37 +109,28 @@ training_list = []
 
 # create training list with right size (transformed)
 for i in range(len(in_list)):
-    print(in_list[i])
-    training_list.append((transform(Image.open(in_list[i])), transform(Image.open(enhanced_list[i])), 0))
-    training_list.append((transform(Image.open(in_list[i])), transform(Image.open(gt_list[i])), 1))
+    input_img = transform(Image.open(in_list[i]))
+    enhanced_img = transform(Image.open(enhanced_list[i]))
+    gt_img = transform(Image.open(gt_list[i]))
+
+    training_list.append((input_img, enhanced_img, False))
+    training_list.append((input_img, gt_img, True))
 
 random.shuffle(training_list)
 
-# print(gt_list)
+x = torch.empty((n_samples, in_channels, s_img, s_img))
+labels = torch.empty(output_shape)
 
-for i, tuple in enumerate(training_list):
-    img1, img2, label = tuple
+
+for i, (img1, img2, is_real) in enumerate(training_list):
+
     x[i, :, :, :] = torch.cat((img1, img2), dim=0)
-    if label == 1:
+    
+    if is_real:
         labels[i, 0] = torch.ones(30, 30)
     else:
         labels[i, 0] = torch.zeros(30, 30)
 
-
-
-    # gt_img = transform(Image.open(gt_list.pop()))
-    # input_img = transform(Image.open(in_list.pop()))
-    #
-    # if i % 2 == 0:  # Even indices for real images
-    #     x[i, :, :, :] = torch.cat((input_img, gt_img), dim=0)
-    #     print(torch.cat((input_img, gt_img), dim=0).shape)
-    #     labels[i, 0] = torch.ones(30, 30)
-    #
-    # else:  # Odd indices for fake images
-    #     x[i, :, :, :] = torch.cat((input_img, input_img), dim=0)
-    #     labels[i, 0] = torch.zeros(30, 30)
-    #
-    # i+=1
 
 # =============================================================================
 # initialize model
@@ -185,20 +175,22 @@ plt.ylabel('Loss (BCE)')
 plt.show()
 
 
-#Test
-#
-# test_loss = 0.0
-# correct, total = 0,0
-#
-# for data,label in testloader:
-#     if is_gpu:
-#         data, label = data.cuda(), label.cuda()
-#     output = model(data)
-#     for o,l in zip(torch.argmax(output,axis = 1),label):
-#         if o == l:
-#             correct += 1
-#         total += 1
-#     loss = criterion(output,label)
-#     test_loss += loss.item() * data.size(0)
-# print(f'Testing Loss:{test_loss/len(testloader)}')
-# print(f'Correct Predictions: {correct}/{total}')
+# =============================================================================
+# #Test
+# #
+# # test_loss = 0.0
+# # correct, total = 0,0
+# #
+# # for data,label in testloader:
+# #     if is_gpu:
+# #         data, label = data.cuda(), label.cuda()
+# #     output = model(data)
+# #     for o,l in zip(torch.argmax(output,axis = 1),label):
+# #         if o == l:
+# #             correct += 1
+# #         total += 1
+# #     loss = criterion(output,label)
+# #     test_loss += loss.item() * data.size(0)
+# # print(f'Testing Loss:{test_loss/len(testloader)}')
+# # print(f'Correct Predictions: {correct}/{total}')
+# =============================================================================
