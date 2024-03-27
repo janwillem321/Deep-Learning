@@ -101,9 +101,10 @@ output_shape = (n_samples, 1, 30, 30)
 
 transform = transforms.Compose([
     transforms.Resize((256, 256), transforms.InterpolationMode.NEAREST),  # Resize the images to a consistent size
+    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize the images
     transforms.ToTensor()           # Convert the images to PyTorch tensors
-    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the images
 ])
+
 
 training_list = []
 
@@ -113,6 +114,12 @@ for i in range(len(in_list)):
     enhanced_img = transform(Image.open(enhanced_list[i]))
     gt_img = transform(Image.open(gt_list[i]))
 
+    # Normalize range [-1, 1]
+    input_img = torch.tanh(input_img)
+    enhanced_img = torch.tanh(enhanced_img)
+    gt_img = torch.tanh(gt_img)
+
+    # List image combinations with label
     training_list.append((input_img, enhanced_img, False))
     training_list.append((input_img, gt_img, True))
 
