@@ -83,9 +83,9 @@ def generate_fake_image():
 folder_dir_gt = "Deep-Learning/train_folder/ground_truth"
 folder_dir_in = "Deep-Learning/train_folder/input_images"
 
-in_list = [os.path.join(folder_dir_in_matthijs, filename) for filename in os.listdir(folder_dir_in_matthijs)]
-gt_list = [os.path.join(folder_dir_gt_matthijs, filename) for filename in os.listdir(folder_dir_gt_matthijs)]
-enhanced_list = [os.path.join(folder_dir_in_matthijs, filename) for filename in os.listdir(folder_dir_in_matthijs)]
+in_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
+gt_list = [os.path.join(folder_dir_gt, filename) for filename in os.listdir(folder_dir_gt)]
+enhanced_list = [os.path.join(folder_dir_in, filename) for filename in os.listdir(folder_dir_in)]
 
 # =============================================================================
 # test auo-encoder
@@ -100,7 +100,7 @@ output_shape = (n_samples, 1, 30, 30)
 # real_image = torch.ones(in_channels//2, s_img, s_img)
 
 transform = transforms.Compose([
-    transforms.Resize((256, 256)),  # Resize the images to a consistent size
+    transforms.Resize((256, 256), transforms.InterpolationMode.NEAREST),  # Resize the images to a consistent size
     transforms.ToTensor()           # Convert the images to PyTorch tensors
     #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the images
 ])
