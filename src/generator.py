@@ -72,7 +72,7 @@ class Decoder(nn.Module):
             self.layers.append(nn.Dropout2d(0.5))
             self.layers.append(nn.LeakyReLU(0.2))
 
-        # the rest of the layers without dropout
+        # the rest of the layers 
         for in_out in range(3, (len(hdim_in) - 1)):
             self.layers.append(
                 nn.ConvTranspose2d(
@@ -87,16 +87,13 @@ class Decoder(nn.Module):
             self.layers.append(nn.BatchNorm2d(hdim_out[in_out + 1]))
             self.layers.append(nn.Dropout2d(0.5))
             self.layers.append(nn.LeakyReLU(0.2))
+        
+        
             
     def forward(self, z, SkipConnections):
         
         EncoderIndex = 3/4
         SkipConnections.reverse()
-        # for con in SkipConnections:
-        #     print(con.shape)
-        
-        # for lay in self.layers:
-        #     print(lay)
 
         for i, layer in enumerate(self.layers):
             if i % 4 == 0 and i != 0:
@@ -104,16 +101,15 @@ class Decoder(nn.Module):
                 # print("index i= ", i)
                 # print("index j = ",j)
                 # print(f'layers shape{layer.parameters}')
-                # print(f' z shape = {z.shape}')
-                # print(f' x shape = {SkipConnections[j].shape}')
+                print(f' z shape = {z.shape}')
+                print(f' x shape = {SkipConnections[j].shape}')
                 # print(f'z concat x = {torch.cat((z,SkipConnections[j]), 1).shape}')
                 z = layer.forward(torch.cat((z,SkipConnections[j]), 1)) 
             else:
-                # print(i)
-                # print(f' z shape = {z.shape}')
-                # print(f' x shape = {SkipConnections[EncoderIndex * i].shape}')
                 z = layer.forward(z)
-        
+                
+        z = torch.tanh(z)
+        z = z * 255
         return z
 
 #Generator
@@ -144,7 +140,6 @@ class Generator(nn.Module):
     def forward(self, x):
 
         z, skipConnections = self.encoder(x)
-        # print(f"the shape of encoder is {z.shape}")
         y = self.decoder(z, skipConnections)
 
         return y
@@ -170,7 +165,7 @@ def generator_test():
                         hdim_d_output=hdim_d_output, 
                         padding=padding,
                         kernel_size=kernel_size)
-    x_hat = model(x)
+    x_hat = model.forward(x)
 
     #compare input and output shape
     print('Output check:', x_hat.shape == x.shape)
@@ -180,6 +175,6 @@ def generator_test():
     summary(model, (3 ,in_channels, s_img, s_img), device='cpu', depth=5,)  # (in_channels, height, width)
 
 
-# generator_test()
+generator_test()
     
 

@@ -28,7 +28,7 @@ def show_images():
                                            transform=transform)
 
     # Initialize DataLoader
-    EUVP_data = DataLoader(paired_dataset, batch_size=128, shuffle=False, num_workers=4)
+    EUVP_data = DataLoader(paired_dataset, batch_size=128, shuffle=False, num_workers=8, pin_memory=True)
 
    # Fetch a single batch
     images_a, images_b = next(iter(EUVP_data))
@@ -54,6 +54,14 @@ def show_images():
 
 if __name__ == "__main__":
     # show_images()
+    num_workers = 4
+    pin_memory = True
+    batch_size = 128
+    n_samples, in_channels, s_img, latent_dims, padding = 1, 3, 256, 512,1
+    hdim_e = [3, 64, 128, 256, 512, 512, 512, 512, 512] #choose hidden dimension encoder
+    hdim_d_input = [512, 1024, 1024, 1024, 1024, 512, 256, 128, 3] #choose hidden dimension decoder
+    hdim_d_output = [512, 512, 512, 512, 512, 256, 128, 64, 3]
+    kernel_size = (4,4)
 
         # Define your transformations
     transform = transforms.Compose([
@@ -63,11 +71,11 @@ if __name__ == "__main__":
 
     # Initialize the dataset
     paired_dataset = PairedImageDataset(rootA=r'archive\EUVP\Paired\underwater_dark\trainA',
-                                         rootB=r'archive\EUVP\Paired\underwater_dark\trainB',
-                                           transform=transform)
+                                        rootB=r'archive\EUVP\Paired\underwater_dark\trainB',
+                                        transform=transform)
 
     # Initialize DataLoader
-    EUVP_data = DataLoader(paired_dataset, batch_size=10, shuffle=False, num_workers=4)
+    EUVP_data = DataLoader(paired_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
 
    # Fetch a single batch
     images_a, images_b = next(iter(EUVP_data))
@@ -77,11 +85,7 @@ if __name__ == "__main__":
     s_img = np.size(images_a[1][0], axis = 1) #get image size (height = width) from a data sample
     # hdim = [100, 50]
 
-    n_samples, in_channels, s_img, latent_dims, padding = 3, 3, 256, 512,1
-    hdim_e = [3, 64, 128, 256, 512, 512, 512, 512, 512] #choose hidden dimension encoder
-    hdim_d_input = [512, 1024, 1024, 1024, 1024, 512, 256, 128, 3] #choose hidden dimension decoder
-    hdim_d_output = [512, 512, 512, 512, 512, 256, 128, 64, 3]
-    kernel_size = (4,4)
+
 
     #initialize model
     model = Generator(latent_dims=latent_dims,
@@ -113,10 +117,12 @@ if __name__ == "__main__":
 
     for epoch in tqdm(range(epochs)):  # loop over the dataset multiple times
         # Train on data
-        train_loss = train(EUVP_data, model, optimizer, criterion, device)
+        train_loss = train(EUVP_data, model, optimizer, criterion, pin_memory, device)
 
         # Write metrics to Tensorboard
         writer.add_scalars("Loss", {'Train': train_loss}, epoch)
+
+
 
     # # Create a writer to write to Tensorboard
     # writer = SummaryWriter()

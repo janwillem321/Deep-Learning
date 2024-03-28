@@ -1,7 +1,7 @@
 import generator
 import torch
 
-def train(train_loader, net, optimizer, criterion, device = 'cpu'):
+def train(train_loader, net, optimizer, criterion, pin_memory , device = 'cpu'):
     """
     Trains network for one epoch in batches.
 
@@ -21,7 +21,9 @@ def train(train_loader, net, optimizer, criterion, device = 'cpu'):
         inputs, labels = data
         
         # convert the inputs to run on GPU if set
-        inputs, labels = inputs.to(device), labels.to(device)
+        if device != 'cpu':
+            inputs, labels = inputs.cuda(non_blocking=pin_memory), labels.cuda(non_blocking=pin_memory)
+            
 
         # zero the parameter gradients
         optimizer.zero_grad()
