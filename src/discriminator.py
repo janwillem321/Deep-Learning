@@ -138,7 +138,7 @@ def train_discriminator():
         else:
             labels[i, 0] = torch.zeros(30, 30)
 
-
+    print(x.shape)
     # =============================================================================
     # initialize model
     # =============================================================================
@@ -157,7 +157,7 @@ def train_discriminator():
     for epoch in range(n_epochs):
 
         # Forward pass
-        outputs = model(x)
+        outputs = model.forward(x)
         output_probabilities = torch.sigmoid(outputs)
 
         # Calculate loss
